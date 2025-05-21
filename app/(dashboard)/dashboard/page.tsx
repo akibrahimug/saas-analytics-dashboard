@@ -1,45 +1,63 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Suspense } from "react"
+import { KpiCards } from "@/components/kpi-cards"
+import { TeamPerformanceChart } from "@/components/team-performance-chart"
+import { TaskCompletionChart } from "@/components/task-completion-chart"
+import { ProjectProgressChart } from "@/components/project-progress-chart"
+import { AnnouncementsFeed } from "@/components/announcements-feed"
+import { LastUpdated } from "@/components/last-updated"
+import { DateRangePicker } from "@/components/date-range-picker"
+import {
+  getKpiMetrics,
+  getTeamPerformance,
+  getTaskCompletion,
+  getProjectProgress,
+  getAnnouncements,
+  getLastUpdated,
+} from "@/lib/actions"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // Fetch initial data
+  const kpiMetrics = await getKpiMetrics()
+  const teamPerformance = await getTeamPerformance()
+  const taskCompletion = await getTaskCompletion()
+  const projectProgress = await getProjectProgress()
+  const announcements = await getAnnouncements()
+  const lastUpdated = await getLastUpdated()
+
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to the Remote Team Analytics Dashboard</p>
+        <p className="text-muted-foreground">Monitor your team's performance and productivity</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Performance</CardTitle>
-            <CardDescription>Overview of your team's performance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-40 bg-muted/50 flex items-center justify-center rounded-md">Chart Placeholder</div>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <LastUpdated initialLastUpdated={lastUpdated} />
+        <DateRangePicker />
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Task Completion</CardTitle>
-            <CardDescription>Task completion rates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-40 bg-muted/50 flex items-center justify-center rounded-md">Chart Placeholder</div>
-          </CardContent>
-        </Card>
+      <Suspense fallback={<div>Loading KPI metrics...</div>}>
+        <KpiCards initialData={kpiMetrics} />
+      </Suspense>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Announcements</CardTitle>
-            <CardDescription>Latest team announcements</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-40 bg-muted/50 flex items-center justify-center rounded-md">
-              Announcements Placeholder
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <Suspense fallback={<div>Loading team performance chart...</div>}>
+          <TeamPerformanceChart initialData={teamPerformance} />
+        </Suspense>
+
+        <Suspense fallback={<div>Loading announcements...</div>}>
+          <AnnouncementsFeed initialAnnouncements={announcements} />
+        </Suspense>
+      </div>
+
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <Suspense fallback={<div>Loading task completion chart...</div>}>
+          <TaskCompletionChart initialData={taskCompletion} />
+        </Suspense>
+
+        <Suspense fallback={<div>Loading project progress chart...</div>}>
+          <ProjectProgressChart initialData={projectProgress} />
+        </Suspense>
       </div>
     </div>
   )
