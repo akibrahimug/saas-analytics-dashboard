@@ -1,15 +1,3 @@
-import { PrismaClient } from "@prisma/client"
-
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
-
-export const db =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  })
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db
-
 // Mock database client for preview
 export const mockDb = {
   user: {
@@ -69,7 +57,5 @@ export const mockDb = {
   // Add other mock models as needed
 }
 
-// Use mockDb in development environment
-if (process.env.NODE_ENV === "development") {
-  Object.assign(db, mockDb)
-}
+// Export mockDb directly instead of trying to use PrismaClient
+export const db = mockDb
