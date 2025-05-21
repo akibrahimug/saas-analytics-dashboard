@@ -15,7 +15,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { PermissionGate } from "@/components/permission-gate"
@@ -23,7 +22,6 @@ import { PERMISSIONS } from "@/lib/roles"
 
 export function DashboardSidebar() {
   const pathname = usePathname()
-  const { state } = useSidebar()
 
   return (
     <Sidebar defaultState="expanded">
@@ -40,11 +38,7 @@ export function DashboardSidebar() {
             <SidebarMenu>
               <PermissionGate permission={PERMISSIONS.VIEW_DASHBOARD}>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === "/dashboard"}
-                    tooltip={state === "collapsed" ? "Dashboard" : undefined}
-                  >
+                  <SidebarMenuButton asChild isActive={pathname === "/dashboard"}>
                     <Link href="/dashboard">
                       <LayoutDashboard className="h-4 w-4" />
                       <span>Dashboard</span>
@@ -55,7 +49,7 @@ export function DashboardSidebar() {
 
               <PermissionGate permission={PERMISSIONS.VIEW_TEAM}>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip={state === "collapsed" ? "Team" : undefined}>
+                  <SidebarMenuButton asChild>
                     <Link href="/team">
                       <Users className="h-4 w-4" />
                       <span>Team</span>
@@ -65,7 +59,7 @@ export function DashboardSidebar() {
               </PermissionGate>
 
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={state === "collapsed" ? "Calendar" : undefined}>
+                <SidebarMenuButton asChild>
                   <Link href="/calendar">
                     <Calendar className="h-4 w-4" />
                     <span>Calendar</span>
@@ -74,7 +68,7 @@ export function DashboardSidebar() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={state === "collapsed" ? "Messages" : undefined}>
+                <SidebarMenuButton asChild>
                   <Link href="/messages">
                     <MessageSquare className="h-4 w-4" />
                     <span>Messages</span>
@@ -91,11 +85,7 @@ export function DashboardSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === "/settings"}
-                    tooltip={state === "collapsed" ? "Settings" : undefined}
-                  >
+                  <SidebarMenuButton asChild isActive={pathname === "/settings"}>
                     <Link href="/settings">
                       <Settings className="h-4 w-4" />
                       <span>Settings</span>
@@ -113,11 +103,7 @@ export function DashboardSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === "/admin"}
-                    tooltip={state === "collapsed" ? "Admin" : undefined}
-                  >
+                  <SidebarMenuButton asChild isActive={pathname === "/admin"}>
                     <Link href="/admin">
                       <Shield className="h-4 w-4" />
                       <span>Admin Panel</span>
@@ -127,11 +113,7 @@ export function DashboardSidebar() {
 
                 <PermissionGate permission={PERMISSIONS.MANAGE_USERS}>
                   <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === "/admin/users"}
-                      tooltip={state === "collapsed" ? "User Management" : undefined}
-                    >
+                    <SidebarMenuButton asChild isActive={pathname === "/admin/users"}>
                       <Link href="/admin/users">
                         <UserCog className="h-4 w-4" />
                         <span>User Management</span>
