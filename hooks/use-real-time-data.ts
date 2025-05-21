@@ -24,7 +24,9 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
 
   // Update initial data when it changes
   useEffect(() => {
-    setData(initialData)
+    if (initialData) {
+      setData(initialData)
+    }
   }, [initialData])
 
   // Cleanup function
@@ -54,7 +56,10 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
       const result = await response.json()
 
       if (isMountedRef.current) {
-        setData(result.data)
+        // Only update data if it's not null or undefined
+        if (result.data) {
+          setData(result.data)
+        }
         setLastUpdated(result.lastUpdated || null)
         setError(null)
       }
@@ -95,7 +100,7 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
           if (parsedData.type === "connected") {
             setIsConnected(true)
             console.log(`SSE connected for ${dataType}`)
-          } else if (parsedData.type === dataType) {
+          } else if (parsedData.type === dataType && parsedData.data) {
             console.log(`Received ${dataType} update:`, parsedData.data)
             setData(parsedData.data)
           } else if (parsedData.type === "lastUpdated") {
