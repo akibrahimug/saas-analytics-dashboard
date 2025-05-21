@@ -120,6 +120,7 @@ const DEFAULT_ANNOUNCEMENTS: Announcement[] = [
 export async function updateKpiMetrics(data: KpiMetric) {
   try {
     console.log("Updating KPI metrics:", data)
+    // Ensure we're storing a string in Redis
     await redis.set(KEYS.KPI_METRICS, JSON.stringify(data))
     await redis.set(KEYS.LAST_UPDATED, new Date().toISOString())
     revalidatePath("/dashboard")
@@ -134,6 +135,7 @@ export async function updateKpiMetrics(data: KpiMetric) {
 export async function updateTeamPerformance(data: TeamPerformanceData) {
   try {
     console.log("Updating team performance:", data)
+    // Ensure we're storing a string in Redis
     await redis.set(KEYS.TEAM_PERFORMANCE, JSON.stringify(data))
     await redis.set(KEYS.LAST_UPDATED, new Date().toISOString())
     revalidatePath("/dashboard")
@@ -148,6 +150,7 @@ export async function updateTeamPerformance(data: TeamPerformanceData) {
 export async function updateTaskCompletion(data: TaskCompletionData) {
   try {
     console.log("Updating task completion:", data)
+    // Ensure we're storing a string in Redis
     await redis.set(KEYS.TASK_COMPLETION, JSON.stringify(data))
     await redis.set(KEYS.LAST_UPDATED, new Date().toISOString())
     revalidatePath("/dashboard")
@@ -162,6 +165,7 @@ export async function updateTaskCompletion(data: TaskCompletionData) {
 export async function updateProjectProgress(data: ProjectProgressData) {
   try {
     console.log("Updating project progress:", data)
+    // Ensure we're storing a string in Redis
     await redis.set(KEYS.PROJECT_PROGRESS, JSON.stringify(data))
     await redis.set(KEYS.LAST_UPDATED, new Date().toISOString())
     revalidatePath("/dashboard")
@@ -178,6 +182,7 @@ export async function addAnnouncement(announcement: Announcement) {
     console.log("Adding announcement:", announcement)
     const announcements = await getAnnouncements()
     const updatedAnnouncements = [announcement, ...announcements].slice(0, 10) // Keep only the 10 most recent
+    // Ensure we're storing a string in Redis
     await redis.set(KEYS.ANNOUNCEMENTS, JSON.stringify(updatedAnnouncements))
     revalidatePath("/dashboard")
     return { success: true }
@@ -187,24 +192,10 @@ export async function addAnnouncement(announcement: Announcement) {
   }
 }
 
-// Helper function to safely parse JSON or return the original value if it's already an object
-function safelyParseJSON(data: any): any {
-  if (typeof data === "string") {
-    try {
-      return JSON.parse(data)
-    } catch (error) {
-      console.error("Error parsing JSON:", error)
-      return null
-    }
-  }
-  // If it's already an object, return it as is
-  return data
-}
-
 // Function to get KPI metrics
 export async function getKpiMetrics(): Promise<KpiMetric> {
   try {
-    const data = await redis.get(KEYS.KPI_METRICS)
+    const data = await redis.get<string | object>(KEYS.KPI_METRICS)
 
     if (!data) {
       console.log("No KPI metrics found, returning default data")
@@ -213,16 +204,37 @@ export async function getKpiMetrics(): Promise<KpiMetric> {
 
     console.log("Retrieved KPI metrics from Redis, type:", typeof data)
 
-    // Safely parse the data if it's a string, or use it directly if it's already an object
-    const parsedData = safelyParseJSON(data)
+    // Handle the data based on its type
+    if (typeof data === "string") {
+      try {
+        // If it's a string, try to parse it as JSON
+        const parsedData = JSON.parse(data)
 
-    // Validate the parsed data has the expected structure
-    if (!parsedData || !parsedData.taskCompletionRate) {
-      console.log("Invalid KPI metrics data, returning default data")
+        // Validate the parsed data has the expected structure
+        if (!parsedData || typeof parsedData !== "object" || !parsedData.taskCompletionRate) {
+          console.log("Invalid KPI metrics data structure, returning default data")
+          return DEFAULT_KPI_METRICS
+        }
+
+        return parsedData as KpiMetric
+      } catch (parseError) {
+        console.error("Error parsing KPI metrics:", parseError)
+        return DEFAULT_KPI_METRICS
+      }
+    } else if (typeof data === "object" && data !== null) {
+      // If it's already an object, validate it has the expected structure
+      const objectData = data as any
+
+      if (!objectData.taskCompletionRate) {
+        console.log("Invalid KPI metrics object structure, returning default data")
+        return DEFAULT_KPI_METRICS
+      }
+
+      return objectData as KpiMetric
+    } else {
+      console.log("Unexpected data type for KPI metrics, returning default data")
       return DEFAULT_KPI_METRICS
     }
-
-    return parsedData as KpiMetric
   } catch (error) {
     console.error("Error getting KPI metrics:", error)
     return DEFAULT_KPI_METRICS
@@ -232,25 +244,44 @@ export async function getKpiMetrics(): Promise<KpiMetric> {
 // Function to get team performance data
 export async function getTeamPerformance(): Promise<TeamPerformanceData> {
   try {
-    const data = await redis.get(KEYS.TEAM_PERFORMANCE)
+    const data = await redis.get<string | object>(KEYS.TEAM_PERFORMANCE)
 
     if (!data) {
       console.log("No team performance data found, returning default data")
       return DEFAULT_TEAM_PERFORMANCE
     }
 
-    console.log("Retrieved team performance data from Redis")
+    console.log("Retrieved team performance data from Redis, type:", typeof data)
 
-    // Safely parse the data if it's a string, or use it directly if it's already an object
-    const parsedData = safelyParseJSON(data)
+    // Handle the data based on its type
+    if (typeof data === "string") {
+      try {
+        // If it's a string, try to parse it as JSON
+        const parsedData = JSON.parse(data)
 
-    // Validate the parsed data is an array
-    if (!Array.isArray(parsedData) || parsedData.length === 0) {
-      console.log("Invalid team performance data, returning default data")
+        // Validate the parsed data is an array
+        if (!Array.isArray(parsedData) || parsedData.length === 0) {
+          console.log("Invalid team performance data structure, returning default data")
+          return DEFAULT_TEAM_PERFORMANCE
+        }
+
+        return parsedData as TeamPerformanceData
+      } catch (parseError) {
+        console.error("Error parsing team performance data:", parseError)
+        return DEFAULT_TEAM_PERFORMANCE
+      }
+    } else if (typeof data === "object" && data !== null) {
+      // If it's already an object, validate it's an array
+      if (Array.isArray(data) && data.length > 0) {
+        return data as TeamPerformanceData
+      } else {
+        console.log("Invalid team performance object structure, returning default data")
+        return DEFAULT_TEAM_PERFORMANCE
+      }
+    } else {
+      console.log("Unexpected data type for team performance, returning default data")
       return DEFAULT_TEAM_PERFORMANCE
     }
-
-    return parsedData as TeamPerformanceData
   } catch (error) {
     console.error("Error getting team performance:", error)
     return DEFAULT_TEAM_PERFORMANCE
@@ -260,25 +291,44 @@ export async function getTeamPerformance(): Promise<TeamPerformanceData> {
 // Function to get task completion data
 export async function getTaskCompletion(): Promise<TaskCompletionData> {
   try {
-    const data = await redis.get(KEYS.TASK_COMPLETION)
+    const data = await redis.get<string | object>(KEYS.TASK_COMPLETION)
 
     if (!data) {
       console.log("No task completion data found, returning default data")
       return DEFAULT_TASK_COMPLETION
     }
 
-    console.log("Retrieved task completion data from Redis")
+    console.log("Retrieved task completion data from Redis, type:", typeof data)
 
-    // Safely parse the data if it's a string, or use it directly if it's already an object
-    const parsedData = safelyParseJSON(data)
+    // Handle the data based on its type
+    if (typeof data === "string") {
+      try {
+        // If it's a string, try to parse it as JSON
+        const parsedData = JSON.parse(data)
 
-    // Validate the parsed data is an array
-    if (!Array.isArray(parsedData) || parsedData.length === 0) {
-      console.log("Invalid task completion data, returning default data")
+        // Validate the parsed data is an array
+        if (!Array.isArray(parsedData) || parsedData.length === 0) {
+          console.log("Invalid task completion data structure, returning default data")
+          return DEFAULT_TASK_COMPLETION
+        }
+
+        return parsedData as TaskCompletionData
+      } catch (parseError) {
+        console.error("Error parsing task completion data:", parseError)
+        return DEFAULT_TASK_COMPLETION
+      }
+    } else if (typeof data === "object" && data !== null) {
+      // If it's already an object, validate it's an array
+      if (Array.isArray(data) && data.length > 0) {
+        return data as TaskCompletionData
+      } else {
+        console.log("Invalid task completion object structure, returning default data")
+        return DEFAULT_TASK_COMPLETION
+      }
+    } else {
+      console.log("Unexpected data type for task completion, returning default data")
       return DEFAULT_TASK_COMPLETION
     }
-
-    return parsedData as TaskCompletionData
   } catch (error) {
     console.error("Error getting task completion:", error)
     return DEFAULT_TASK_COMPLETION
@@ -288,25 +338,44 @@ export async function getTaskCompletion(): Promise<TaskCompletionData> {
 // Function to get project progress data
 export async function getProjectProgress(): Promise<ProjectProgressData> {
   try {
-    const data = await redis.get(KEYS.PROJECT_PROGRESS)
+    const data = await redis.get<string | object>(KEYS.PROJECT_PROGRESS)
 
     if (!data) {
       console.log("No project progress data found, returning default data")
       return DEFAULT_PROJECT_PROGRESS
     }
 
-    console.log("Retrieved project progress data from Redis")
+    console.log("Retrieved project progress data from Redis, type:", typeof data)
 
-    // Safely parse the data if it's a string, or use it directly if it's already an object
-    const parsedData = safelyParseJSON(data)
+    // Handle the data based on its type
+    if (typeof data === "string") {
+      try {
+        // If it's a string, try to parse it as JSON
+        const parsedData = JSON.parse(data)
 
-    // Validate the parsed data is an array
-    if (!Array.isArray(parsedData) || parsedData.length === 0) {
-      console.log("Invalid project progress data, returning default data")
+        // Validate the parsed data is an array
+        if (!Array.isArray(parsedData) || parsedData.length === 0) {
+          console.log("Invalid project progress data structure, returning default data")
+          return DEFAULT_PROJECT_PROGRESS
+        }
+
+        return parsedData as ProjectProgressData
+      } catch (parseError) {
+        console.error("Error parsing project progress data:", parseError)
+        return DEFAULT_PROJECT_PROGRESS
+      }
+    } else if (typeof data === "object" && data !== null) {
+      // If it's already an object, validate it's an array
+      if (Array.isArray(data) && data.length > 0) {
+        return data as ProjectProgressData
+      } else {
+        console.log("Invalid project progress object structure, returning default data")
+        return DEFAULT_PROJECT_PROGRESS
+      }
+    } else {
+      console.log("Unexpected data type for project progress, returning default data")
       return DEFAULT_PROJECT_PROGRESS
     }
-
-    return parsedData as ProjectProgressData
   } catch (error) {
     console.error("Error getting project progress:", error)
     return DEFAULT_PROJECT_PROGRESS
@@ -316,25 +385,44 @@ export async function getProjectProgress(): Promise<ProjectProgressData> {
 // Function to get announcements
 export async function getAnnouncements(): Promise<Announcement[]> {
   try {
-    const data = await redis.get(KEYS.ANNOUNCEMENTS)
+    const data = await redis.get<string | object>(KEYS.ANNOUNCEMENTS)
 
     if (!data) {
       console.log("No announcements found, returning default data")
       return DEFAULT_ANNOUNCEMENTS
     }
 
-    console.log("Retrieved announcements from Redis")
+    console.log("Retrieved announcements from Redis, type:", typeof data)
 
-    // Safely parse the data if it's a string, or use it directly if it's already an object
-    const parsedData = safelyParseJSON(data)
+    // Handle the data based on its type
+    if (typeof data === "string") {
+      try {
+        // If it's a string, try to parse it as JSON
+        const parsedData = JSON.parse(data)
 
-    // Validate the parsed data is an array
-    if (!Array.isArray(parsedData) || parsedData.length === 0) {
-      console.log("Invalid announcements data, returning default data")
+        // Validate the parsed data is an array
+        if (!Array.isArray(parsedData) || parsedData.length === 0) {
+          console.log("Invalid announcements data structure, returning default data")
+          return DEFAULT_ANNOUNCEMENTS
+        }
+
+        return parsedData as Announcement[]
+      } catch (parseError) {
+        console.error("Error parsing announcements data:", parseError)
+        return DEFAULT_ANNOUNCEMENTS
+      }
+    } else if (typeof data === "object" && data !== null) {
+      // If it's already an object, validate it's an array
+      if (Array.isArray(data) && data.length > 0) {
+        return data as Announcement[]
+      } else {
+        console.log("Invalid announcements object structure, returning default data")
+        return DEFAULT_ANNOUNCEMENTS
+      }
+    } else {
+      console.log("Unexpected data type for announcements, returning default data")
       return DEFAULT_ANNOUNCEMENTS
     }
-
-    return parsedData as Announcement[]
   } catch (error) {
     console.error("Error getting announcements:", error)
     return DEFAULT_ANNOUNCEMENTS
@@ -344,8 +432,8 @@ export async function getAnnouncements(): Promise<Announcement[]> {
 // Function to get last updated timestamp
 export async function getLastUpdated(): Promise<string> {
   try {
-    const data = await redis.get(KEYS.LAST_UPDATED)
-    return data ? data.toString() : new Date().toISOString()
+    const data = await redis.get<string>(KEYS.LAST_UPDATED)
+    return data || new Date().toISOString()
   } catch (error) {
     console.error("Error getting last updated timestamp:", error)
     return new Date().toISOString()
