@@ -85,6 +85,54 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
     }
   }
 
+  // Fetch data using polling with cache-busting and abort signal
+  const fetchData = async () => {
+    if (!isMountedRef.current || isLoading) return
+
+    // Create a new AbortController for this request
+    abortControllerRef.current = new AbortController()
+    const signal = abortControllerRef.current.signal
+
+    setIsLoading(true)
+
+    try {
+      // Add cache-busting parameter and use the abort signal
+      const response = await fetch(`/api/data?dataType=${dataType}&t=${Date.now()}`, {
+        signal,
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (isMountedRef.current) {
+        // Only update data if it's not null or undefined
+        if (result.data) {
+          setData(result.data)
+        }
+        setLastUpdated(result.lastUpdated || null)
+        setError(null)
+      }
+    } catch (err) {
+      // Ignore abort errors as they're expected when cleaning up
+      if (err.name !== "AbortError" && isMountedRef.current) {
+        console.error(`Polling error for ${dataType}:`, err)
+        setError(`Error fetching updates. Using static data.`)
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false)
+      }
+    }
+  }
+
   // Setup SSE connection
   const setupSSE = () => {
     cleanup()
@@ -165,10 +213,10 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
     cleanup()
 
     // Fetch immediately
-    fetchDataWithPolling()
+    fetchData()
 
     // Then set up interval
-    pollingIntervalRef.current = setInterval(fetchDataWithPolling, POLLING_INTERVAL)
+    pollingIntervalRef.current = setInterval(fetchData, POLLING_INTERVAL)
   }
 
   // Main effect for setting up data fetching
