@@ -1,8 +1,17 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { BarChart3, Settings, Users, Calendar, MessageSquare, LayoutDashboard, Shield, UserCog } from "lucide-react"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  BarChart3,
+  Settings,
+  Users,
+  Calendar,
+  MessageSquare,
+  LayoutDashboard,
+  Shield,
+  UserCog,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,14 +25,14 @@ import {
   SidebarMenuItem,
   SidebarRail,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { PermissionGate } from "@/components/permission-gate"
-import { PERMISSIONS } from "@/lib/roles"
+} from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { PermissionGate } from "@/components/permission-gate";
+import { PERMISSIONS } from "@/lib/roles";
 
 export function DashboardSidebar() {
-  const pathname = usePathname()
-  const { state } = useSidebar()
+  const pathname = usePathname();
+  const { state } = useSidebar();
 
   return (
     <Sidebar>
@@ -55,7 +64,10 @@ export function DashboardSidebar() {
 
               <PermissionGate permission={PERMISSIONS.VIEW_TEAM}>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip={state === "collapsed" ? "Team" : undefined}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={state === "collapsed" ? "Team" : undefined}
+                  >
                     <Link href="/team">
                       <Users className="h-4 w-4" />
                       <span>Team</span>
@@ -65,7 +77,10 @@ export function DashboardSidebar() {
               </PermissionGate>
 
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={state === "collapsed" ? "Calendar" : undefined}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={state === "collapsed" ? "Calendar" : undefined}
+                >
                   <Link href="/calendar">
                     <Calendar className="h-4 w-4" />
                     <span>Calendar</span>
@@ -74,7 +89,10 @@ export function DashboardSidebar() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={state === "collapsed" ? "Messages" : undefined}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={state === "collapsed" ? "Messages" : undefined}
+                >
                   <Link href="/messages">
                     <MessageSquare className="h-4 w-4" />
                     <span>Messages</span>
@@ -130,7 +148,9 @@ export function DashboardSidebar() {
                     <SidebarMenuButton
                       asChild
                       isActive={pathname === "/admin/users"}
-                      tooltip={state === "collapsed" ? "User Management" : undefined}
+                      tooltip={
+                        state === "collapsed" ? "User Management" : undefined
+                      }
                     >
                       <Link href="/admin/users">
                         <UserCog className="h-4 w-4" />
@@ -149,5 +169,5 @@ export function DashboardSidebar() {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

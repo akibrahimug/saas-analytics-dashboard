@@ -37,7 +37,7 @@ A SaaS web application that helps remote teams and managers track productivity a
 
 1. Clone the repository:
    \`\`\`bash
-   git clone https://github.com/yourusername/remote-team-analytics.git
+   git clone https://github.com/akibrahimug/saas-analytics-dashboard
    cd remote-team-analytics
    \`\`\`
 
