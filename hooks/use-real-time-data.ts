@@ -19,6 +19,7 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
     let eventSource: EventSource | null = null
     let retryCount = 0
     const maxRetries = 5
+    let retryTimeout: NodeJS.Timeout | null = null
 
     const connectSSE = () => {
       try {
@@ -27,8 +28,9 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
           eventSource.close()
         }
 
-        // Create new EventSource connection
-        eventSource = new EventSource(`/api/sse?dataType=${dataType}`)
+        // Create new EventSource connection with a cache-busting parameter
+        const timestamp = new Date().getTime()
+        eventSource = new EventSource(`/api/sse?dataType=${dataType}&t=${timestamp}`)
 
         // Connection opened
         eventSource.onopen = () => {
@@ -60,7 +62,13 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
         // Handle errors
         eventSource.onerror = (err) => {
           console.error(`SSE connection error for ${dataType}:`, err)
-          eventSource?.close()
+
+          // Only close and retry if we still have the event source
+          if (eventSource) {
+            eventSource.close()
+            eventSource = null
+          }
+
           setIsConnected(false)
 
           // Implement retry logic
@@ -68,14 +76,21 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
           if (retryCount <= maxRetries) {
             const retryDelay = Math.min(1000 * 2 ** retryCount, 30000) // Exponential backoff with max 30s
             setError(`Connection lost. Retrying in ${retryDelay / 1000}s...`)
-            setTimeout(connectSSE, retryDelay)
+
+            // Clear any existing timeout
+            if (retryTimeout) {
+              clearTimeout(retryTimeout)
+            }
+
+            // Set new timeout for retry
+            retryTimeout = setTimeout(connectSSE, retryDelay)
           } else {
-            setError("Failed to connect to real-time updates after multiple attempts.")
+            setError("Failed to connect to real-time updates after multiple attempts. Using static data.")
           }
         }
       } catch (err) {
         console.error(`Error setting up SSE for ${dataType}:`, err)
-        setError("Failed to connect to real-time updates.")
+        setError("Failed to connect to real-time updates. Using static data.")
       }
     }
 
@@ -87,6 +102,11 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
       if (eventSource) {
         console.log(`Closing SSE connection for ${dataType}`)
         eventSource.close()
+        eventSource = null
+      }
+
+      if (retryTimeout) {
+        clearTimeout(retryTimeout)
       }
     }
   }, [dataType])
