@@ -1,45 +1,54 @@
-import type { NextRequest } from "next/server"
-import { redis, KEYS } from "@/lib/redis"
+import { type NextRequest, NextResponse } from "next/server"
+import {
+  getKpiMetrics,
+  getTeamPerformance,
+  getTaskCompletion,
+  getProjectProgress,
+  getAnnouncements,
+  getLastUpdated,
+} from "@/lib/actions"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 export async function GET(request: NextRequest) {
-  const dataType = request.nextUrl.searchParams.get("dataType")
-
-  if (!dataType) {
-    return Response.json({ error: "Data type is required" }, { status: 400 })
-  }
-
   try {
-    // Get the appropriate Redis key based on data type
-    const redisKey =
-      dataType === "kpi"
-        ? KEYS.KPI_METRICS
-        : dataType === "team"
-          ? KEYS.TEAM_PERFORMANCE
-          : dataType === "task"
-            ? KEYS.TASK_COMPLETION
-            : dataType === "project"
-              ? KEYS.PROJECT_PROGRESS
-              : dataType === "announcements"
-                ? KEYS.ANNOUNCEMENTS
-                : ""
+    const dataType = request.nextUrl.searchParams.get("dataType")
 
-    if (!redisKey) {
-      return Response.json({ error: "Invalid data type" }, { status: 400 })
+    if (!dataType) {
+      return NextResponse.json({ error: "Data type is required" }, { status: 400 })
     }
 
-    // Get data from Redis
-    const data = await redis.get(redisKey)
-    const lastUpdated = await redis.get(KEYS.LAST_UPDATED)
+    let data
+    const lastUpdated = await getLastUpdated()
 
-    return Response.json({
-      data: data ? JSON.parse(data as string) : null,
+    // Get the appropriate data based on data type
+    switch (dataType) {
+      case "kpi":
+        data = await getKpiMetrics()
+        break
+      case "team":
+        data = await getTeamPerformance()
+        break
+      case "task":
+        data = await getTaskCompletion()
+        break
+      case "project":
+        data = await getProjectProgress()
+        break
+      case "announcements":
+        data = await getAnnouncements()
+        break
+      default:
+        return NextResponse.json({ error: "Invalid data type" }, { status: 400 })
+    }
+
+    return NextResponse.json({
+      data,
       lastUpdated,
     })
   } catch (error) {
-    console.error(`Error fetching data for ${dataType}:`, error)
-    return Response.json({ error: "Failed to fetch data" }, { status: 500 })
+    console.error("Error in data API:", error)
+    return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

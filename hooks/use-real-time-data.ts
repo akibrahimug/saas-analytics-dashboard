@@ -12,6 +12,7 @@ const POLLING_ENABLED = true // Set to true to enable polling fallback
 export function useRealTimeData<T>(dataType: DataType, initialData: T) {
   const [data, setData] = useState<T>(initialData)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [usePolling, setUsePolling] = useState(false)
@@ -21,6 +22,7 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
   const isMountedRef = useRef(true)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Update initial data when it changes
   useEffect(() => {
@@ -40,11 +42,19 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
       clearInterval(pollingIntervalRef.current)
       pollingIntervalRef.current = null
     }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
   }
 
   // Fetch data using polling
   const fetchDataWithPolling = async () => {
     if (!isMountedRef.current) return
+
+    setIsLoading(true)
+    setError(null)
 
     try {
       const response = await fetch(`/api/data?dataType=${dataType}&t=${Date.now()}`)
@@ -67,6 +77,10 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
       console.error(`Polling error for ${dataType}:`, err)
       if (isMountedRef.current) {
         setError(`Error fetching updates. Using static data.`)
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false)
       }
     }
   }
@@ -180,6 +194,7 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
   return {
     data,
     lastUpdated,
+    isLoading,
     isConnected: usePolling ? true : isConnected,
     error,
     isPolling: usePolling,
