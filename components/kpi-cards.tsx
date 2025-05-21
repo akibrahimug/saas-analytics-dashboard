@@ -4,16 +4,23 @@ import { Activity, CheckCircle2, Clock, MessageSquare, TrendingUp, TrendingDown 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRealTimeData } from "@/hooks/use-real-time-data"
 import type { KpiMetric } from "@/lib/actions"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 interface KpiCardsProps {
   initialData: KpiMetric
 }
 
 export function KpiCards({ initialData }: KpiCardsProps) {
-  const { data, error } = useRealTimeData<KpiMetric>("kpi", initialData)
+  const { data, error, isConnected } = useRealTimeData<KpiMetric>("kpi", initialData)
 
   if (error) {
-    console.error("Error fetching real-time KPI data:", error)
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>Error loading KPI data: {error}</AlertDescription>
+      </Alert>
+    )
   }
 
   return (
@@ -34,6 +41,7 @@ export function KpiCards({ initialData }: KpiCardsProps) {
             {data.taskCompletionRate.change > 0 ? "+" : ""}
             {data.taskCompletionRate.change}% from last month
           </p>
+          {isConnected && <div className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse" title="Live data" />}
         </CardContent>
       </Card>
 
@@ -53,6 +61,7 @@ export function KpiCards({ initialData }: KpiCardsProps) {
             {data.avgResponseTime.change > 0 ? "+" : ""}
             {data.avgResponseTime.change} hours from last week
           </p>
+          {isConnected && <div className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse" title="Live data" />}
         </CardContent>
       </Card>
 
@@ -72,6 +81,7 @@ export function KpiCards({ initialData }: KpiCardsProps) {
             {data.teamActivity.change > 0 ? "+" : ""}
             {data.teamActivity.change}% from last month
           </p>
+          {isConnected && <div className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse" title="Live data" />}
         </CardContent>
       </Card>
 
@@ -91,6 +101,7 @@ export function KpiCards({ initialData }: KpiCardsProps) {
             {data.communicationFreq.change > 0 ? "+" : ""}
             {data.communicationFreq.change}% from last week
           </p>
+          {isConnected && <div className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse" title="Live data" />}
         </CardContent>
       </Card>
     </div>

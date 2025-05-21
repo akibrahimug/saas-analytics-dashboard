@@ -7,6 +7,7 @@ import { useRealTimeData } from "@/hooks/use-real-time-data"
 import type { TeamPerformanceData } from "@/lib/actions"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface TeamPerformanceChartProps {
   initialData: TeamPerformanceData
@@ -15,6 +16,22 @@ interface TeamPerformanceChartProps {
 
 export function TeamPerformanceChart({ initialData, className }: TeamPerformanceChartProps) {
   const { data, error, isConnected } = useRealTimeData<TeamPerformanceData>("team", initialData)
+
+  if (!data || data.length === 0) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle>Team Performance</CardTitle>
+          <CardDescription>Productivity, engagement, and satisfaction metrics over time</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] sm:h-[350px] md:h-[400px] flex items-center justify-center">
+            <Skeleton className="h-full w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className={className}>

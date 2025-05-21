@@ -35,6 +35,7 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
           setIsConnected(true)
           setError(null)
           retryCount = 0
+          console.log(`SSE connection established for ${dataType}`)
         }
 
         // Handle messages
@@ -44,19 +45,21 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
 
             if (parsedData.type === "connected") {
               setIsConnected(true)
+              console.log(`SSE connected for ${dataType}`)
             } else if (parsedData.type === dataType) {
+              console.log(`Received ${dataType} update:`, parsedData.data)
               setData(parsedData.data)
             } else if (parsedData.type === "lastUpdated") {
               setLastUpdated(parsedData.data)
             }
           } catch (err) {
-            console.error("Error parsing SSE data:", err)
+            console.error(`Error parsing SSE data for ${dataType}:`, err)
           }
         }
 
         // Handle errors
         eventSource.onerror = (err) => {
-          console.error("SSE connection error:", err)
+          console.error(`SSE connection error for ${dataType}:`, err)
           eventSource?.close()
           setIsConnected(false)
 
@@ -71,7 +74,7 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
           }
         }
       } catch (err) {
-        console.error("Error setting up SSE:", err)
+        console.error(`Error setting up SSE for ${dataType}:`, err)
         setError("Failed to connect to real-time updates.")
       }
     }
@@ -82,6 +85,7 @@ export function useRealTimeData<T>(dataType: DataType, initialData: T) {
     // Clean up on unmount
     return () => {
       if (eventSource) {
+        console.log(`Closing SSE connection for ${dataType}`)
         eventSource.close()
       }
     }
