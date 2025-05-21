@@ -3,6 +3,7 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { DemoRoleSelector } from "@/components/demo-role-selector"
 import { DemoAuthProvider } from "@/lib/demo-auth"
+import { SidebarProvider } from "@/components/ui/sidebar"
 
 export default function DashboardLayout({
   children,
@@ -15,13 +16,15 @@ export default function DashboardLayout({
         <div className="flex min-h-screen flex-col">
           <DashboardHeader />
           <div className="flex flex-1">
-            <aside className="hidden w-64 border-r bg-sidebar md:block">
-              <DashboardSidebar />
-            </aside>
-            <main className="flex-1 p-4 md:p-6">
-              <DemoRoleSelector />
-              {children}
-            </main>
+            <SidebarProvider>
+              <aside className="hidden w-64 border-r bg-sidebar md:block">
+                <DashboardSidebar />
+              </aside>
+              <main className="flex-1 p-4 md:p-6">
+                <DemoRoleSelector />
+                {children}
+              </main>
+            </SidebarProvider>
           </div>
         </div>
       </div>

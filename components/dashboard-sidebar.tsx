@@ -26,7 +26,7 @@ export function DashboardSidebar() {
   const { state } = useSidebar()
 
   return (
-    <Sidebar>
+    <Sidebar defaultState="expanded">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
           <BarChart3 className="h-6 w-6" />
