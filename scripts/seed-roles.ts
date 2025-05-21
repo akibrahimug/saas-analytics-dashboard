@@ -1,23 +1,33 @@
-import { PrismaClient } from "@prisma/client"
+import { createClient } from "@supabase/supabase-js"
 import { ROLES } from "../lib/roles"
 
-const prisma = new PrismaClient()
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL || ""
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function main() {
   // Find the first user to make them an admin
-  const firstUser = await prisma.user.findFirst({
-    orderBy: {
-      createdAt: "asc",
-    },
-  })
+  const { data: firstUser, error: firstUserError } = await supabase
+    .from("users")
+    .select("*")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .single()
+
+  if (firstUserError) {
+    console.error("Error fetching first user:", firstUserError)
+  }
 
   if (firstUser) {
     console.log(`Setting user ${firstUser.email} as admin...`)
-    await prisma.user.update({
-      where: { id: firstUser.id },
-      data: { role: ROLES.ADMIN },
-    })
-    console.log("Admin role assigned successfully!")
+    const { error } = await supabase.from("users").update({ role: ROLES.ADMIN }).eq("id", firstUser.id)
+
+    if (error) {
+      console.error("Error updating user role:", error)
+    } else {
+      console.log("Admin role assigned successfully!")
+    }
   } else {
     console.log("No users found. Create a user first.")
   }
@@ -42,36 +52,49 @@ async function main() {
   ]
 
   for (const user of demoUsers) {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: user.email },
-    })
+    // Check if user exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", user.email)
+      .single()
+
+    if (checkError && checkError.code !== "PGRST116") {
+      console.error(`Error checking for user ${user.email}:`, checkError)
+      continue
+    }
 
     if (!existingUser) {
-      await prisma.user.create({
-        data: {
+      // Create new user
+      const { error: createError } = await supabase.from("users").insert([
+        {
           name: user.name,
           email: user.email,
           role: user.role,
         },
-      })
-      console.log(`Created ${user.role} user: ${user.email}`)
+      ])
+
+      if (createError) {
+        console.error(`Error creating user ${user.email}:`, createError)
+      } else {
+        console.log(`Created ${user.role} user: ${user.email}`)
+      }
     } else {
-      await prisma.user.update({
-        where: { id: existingUser.id },
-        data: { role: user.role },
-      })
-      console.log(`Updated ${user.email} to ${user.role} role`)
+      // Update existing user
+      const { error: updateError } = await supabase.from("users").update({ role: user.role }).eq("id", existingUser.id)
+
+      if (updateError) {
+        console.error(`Error updating user ${user.email}:`, updateError)
+      } else {
+        console.log(`Updated ${user.email} to ${user.role} role`)
+      }
     }
   }
 
   console.log("Seed completed successfully!")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})
