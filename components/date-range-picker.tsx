@@ -22,7 +22,7 @@ export function DateRangePicker({ className }: React.HTMLAttributes<HTMLDivEleme
           <Button
             id="date"
             variant={"outline"}
-            className={cn("w-[300px] justify-start text-left font-normal", !date && "text-muted-foreground")}
+            className={cn("w-full sm:w-[300px] justify-start text-left font-normal", !date && "text-muted-foreground")}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date?.from ? (
@@ -45,7 +45,17 @@ export function DateRangePicker({ className }: React.HTMLAttributes<HTMLDivEleme
             defaultMonth={date?.from}
             selected={date}
             onSelect={setDate}
+            numberOfMonths={1}
+            className="sm:hidden"
+          />
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={date?.from}
+            selected={date}
+            onSelect={setDate}
             numberOfMonths={2}
+            className="hidden sm:block"
           />
         </PopoverContent>
       </Popover>

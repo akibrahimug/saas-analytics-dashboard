@@ -3,29 +3,54 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Legend } from "recharts"
+import { useRealTimeData } from "@/hooks/use-real-time-data"
+import type { TeamPerformanceData } from "@/lib/actions"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface TeamPerformanceChartProps {
+  initialData: TeamPerformanceData
   className?: string
 }
 
-const data = [
-  { date: "Jan", productivity: 67, engagement: 78, satisfaction: 82 },
-  { date: "Feb", productivity: 70, engagement: 80, satisfaction: 81 },
-  { date: "Mar", productivity: 73, engagement: 77, satisfaction: 80 },
-  { date: "Apr", productivity: 78, engagement: 82, satisfaction: 83 },
-  { date: "May", productivity: 82, engagement: 85, satisfaction: 85 },
-  { date: "Jun", productivity: 80, engagement: 87, satisfaction: 88 },
-  { date: "Jul", productivity: 85, engagement: 86, satisfaction: 87 },
-]
+export function TeamPerformanceChart({ initialData, className }: TeamPerformanceChartProps) {
+  const { data, error, isConnected } = useRealTimeData<TeamPerformanceData>("team", initialData)
 
-export function TeamPerformanceChart({ className }: TeamPerformanceChartProps) {
+  if (!data || data.length === 0) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle>Team Performance</CardTitle>
+          <CardDescription>Productivity, engagement, and satisfaction metrics over time</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] sm:h-[350px] md:h-[400px] flex items-center justify-center">
+            <Skeleton className="h-full w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Team Performance</CardTitle>
-        <CardDescription>Productivity, engagement, and satisfaction metrics over time</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Team Performance</CardTitle>
+            <CardDescription>Productivity, engagement, and satisfaction metrics over time</CardDescription>
+          </div>
+          {isConnected && <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Live data" />}
+        </div>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <ChartContainer
           config={{
             productivity: {
@@ -41,10 +66,10 @@ export function TeamPerformanceChart({ className }: TeamPerformanceChartProps) {
               color: "hsl(var(--chart-3))",
             },
           }}
-          className="aspect-[4/3]"
+          className="h-[300px] sm:h-[350px] md:h-[400px]"
         >
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis dataKey="date" />
               <YAxis />

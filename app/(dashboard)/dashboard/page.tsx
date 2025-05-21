@@ -1,19 +1,28 @@
-import type { Metadata } from "next"
-import { DateRangePicker } from "@/components/date-range-picker"
+import { Suspense } from "react"
 import { KpiCards } from "@/components/kpi-cards"
 import { TeamPerformanceChart } from "@/components/team-performance-chart"
 import { TaskCompletionChart } from "@/components/task-completion-chart"
 import { ProjectProgressChart } from "@/components/project-progress-chart"
 import { AnnouncementsFeed } from "@/components/announcements-feed"
-import { getAnnouncements } from "@/lib/contentful"
-
-export const metadata: Metadata = {
-  title: "Dashboard | Remote Team Analytics",
-  description: "View your team's performance metrics",
-}
+import { LastUpdated } from "@/components/last-updated"
+import { DateRangePicker } from "@/components/date-range-picker"
+import {
+  getKpiMetrics,
+  getTeamPerformance,
+  getTaskCompletion,
+  getProjectProgress,
+  getAnnouncements,
+  getLastUpdated,
+} from "@/lib/actions"
 
 export default async function DashboardPage() {
+  // Fetch initial data
+  const kpiMetrics = await getKpiMetrics()
+  const teamPerformance = await getTeamPerformance()
+  const taskCompletion = await getTaskCompletion()
+  const projectProgress = await getProjectProgress()
   const announcements = await getAnnouncements()
+  const lastUpdated = await getLastUpdated()
 
   return (
     <div className="flex flex-col gap-6">
@@ -22,20 +31,33 @@ export default async function DashboardPage() {
         <p className="text-muted-foreground">Monitor your team's performance and productivity</p>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <LastUpdated initialLastUpdated={lastUpdated} />
         <DateRangePicker />
       </div>
 
-      <KpiCards />
+      <Suspense fallback={<div>Loading KPI metrics...</div>}>
+        <KpiCards initialData={kpiMetrics} />
+      </Suspense>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <TeamPerformanceChart className="lg:col-span-2" />
-        <AnnouncementsFeed announcements={announcements} />
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <Suspense fallback={<div>Loading team performance chart...</div>}>
+          <TeamPerformanceChart initialData={teamPerformance} />
+        </Suspense>
+
+        <Suspense fallback={<div>Loading announcements...</div>}>
+          <AnnouncementsFeed initialAnnouncements={announcements} />
+        </Suspense>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <TaskCompletionChart />
-        <ProjectProgressChart />
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <Suspense fallback={<div>Loading task completion chart...</div>}>
+          <TaskCompletionChart initialData={taskCompletion} />
+        </Suspense>
+
+        <Suspense fallback={<div>Loading project progress chart...</div>}>
+          <ProjectProgressChart initialData={projectProgress} />
+        </Suspense>
       </div>
     </div>
   )
