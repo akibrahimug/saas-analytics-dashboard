@@ -2,23 +2,43 @@
 
 import { formatDistanceToNow } from "date-fns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Announcement } from "@/lib/contentful"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useRealTimeData } from "@/hooks/use-real-time-data"
+import type { Announcement } from "@/lib/actions"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 interface AnnouncementsFeedProps {
-  announcements: Announcement[]
+  initialAnnouncements: Announcement[]
 }
 
-export function AnnouncementsFeed({ announcements }: AnnouncementsFeedProps) {
+export function AnnouncementsFeed({ initialAnnouncements }: AnnouncementsFeedProps) {
+  const {
+    data: announcements,
+    error,
+    isConnected,
+  } = useRealTimeData<Announcement[]>("announcements", initialAnnouncements)
+
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle>Announcements</CardTitle>
-        <CardDescription>Latest team updates and announcements</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Announcements</CardTitle>
+            <CardDescription>Latest team updates and announcements</CardDescription>
+          </div>
+          {isConnected && <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Live data" />}
+        </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[350px] pr-4">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <ScrollArea className="h-[250px] sm:h-[300px] md:h-[350px] pr-4">
           <div className="space-y-4">
             {announcements.map((announcement) => (
               <div key={announcement.id} className="flex gap-4">

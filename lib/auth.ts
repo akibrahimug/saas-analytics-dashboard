@@ -1,8 +1,27 @@
 import type { NextAuthOptions } from "next-auth"
+import GoogleProvider from "next-auth/providers/google"
+import GitHubProvider from "next-auth/providers/github"
 import CredentialsProvider from "next-auth/providers/credentials"
+import { ROLES } from "@/lib/roles"
 
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+  },
+  pages: {
+    signIn: "/login",
+    signOut: "/logout",
+    error: "/auth/error",
+  },
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -10,36 +29,44 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // This is a mock implementation for demonstration purposes
-        if (credentials?.email === "demo@example.com" && credentials?.password === "password") {
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
+
+        // For preview, we'll just return a demo user
+        if (credentials.email === "demo@example.com" && credentials.password === "password") {
           return {
-            id: "1",
-            name: "Demo User",
+            id: "demo-user",
             email: "demo@example.com",
-            image: "/placeholder.svg?height=32&width=32",
+            name: "Demo User",
+            image: "/abstract-geometric-shapes.png",
+            role: ROLES.ADMIN,
           }
         }
+
         return null
       },
     }),
   ],
-  pages: {
-    signIn: "/login",
-    error: "/auth/error",
-    signOut: "/login",
-  },
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
   callbacks: {
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub as string
+    async session({ token, session }) {
+      if (token) {
+        session.user.id = token.id
+        session.user.name = token.name
+        session.user.email = token.email
+        session.user.image = token.picture
+        session.user.role = token.role
       }
+
       return session
     },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+        token.role = user.role || ROLES.MEMBER
+      }
+
+      return token
+    },
   },
-  secret: process.env.NEXTAUTH_SECRET || "THIS_IS_AN_EXAMPLE_SECRET_REPLACE_ME",
-  debug: process.env.NODE_ENV === "development",
 }
