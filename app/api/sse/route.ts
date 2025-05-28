@@ -15,7 +15,27 @@ export async function GET(request: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      controller.enqueue(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+      // Flag to track if controller is closed
+      let isClosed = false;
+
+      // Safe wrapper to enqueue data only if controller is still active
+      const safeEnqueue = (data: string) => {
+        if (!isClosed) {
+          try {
+            controller.enqueue(data);
+          } catch (error) {
+            console.error(`Error enqueueing data: ${error}`);
+            isClosed = true;
+            try {
+              controller.close();
+            } catch (closeError) {
+              // Ignore close errors
+            }
+          }
+        }
+      };
+
+      safeEnqueue(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
       console.log(`SSE connection established for ${dataType}`);
 
       const channel = getChannelName(dataType);
@@ -33,12 +53,26 @@ export async function GET(request: NextRequest) {
           : "";
 
       if (!redisKey) {
-        controller.enqueue(
+        safeEnqueue(
           `data: ${JSON.stringify({
             type: "error",
             message: "Invalid data type",
           })}\n\n`
         );
+        isClosed = true;
+        controller.close();
+        return;
+      }
+
+      // Skip real-time updates for the messages page
+      if (dataType === "messages") {
+        safeEnqueue(
+          `data: ${JSON.stringify({
+            type: "messages",
+            data: { static: true },
+          })}\n\n`
+        );
+        isClosed = true;
         controller.close();
         return;
       }
@@ -57,6 +91,12 @@ export async function GET(request: NextRequest) {
       }
 
       const interval = setInterval(async () => {
+        // Skip if controller is already closed
+        if (isClosed) {
+          clearInterval(interval);
+          return;
+        }
+
         try {
           const raw = await redis.get(redisKey);
           let payload: any = raw;
@@ -72,7 +112,7 @@ export async function GET(request: NextRequest) {
           if (raw && raw !== lastData) {
             console.log(`New data detected for ${dataType}`);
             lastData = raw;
-            controller.enqueue(
+            safeEnqueue(
               `data: ${JSON.stringify({
                 type: dataType,
                 data: payload,
@@ -83,7 +123,7 @@ export async function GET(request: NextRequest) {
           const lu = await redis.get(KEYS.LAST_UPDATED);
           if (lu && lu !== lastUpdated) {
             lastUpdated = lu;
-            controller.enqueue(
+            safeEnqueue(
               `data: ${JSON.stringify({
                 type: "lastUpdated",
                 data: lu,
@@ -91,15 +131,22 @@ export async function GET(request: NextRequest) {
             );
           }
 
-          controller.enqueue(`: keep-alive\n\n`);
+          safeEnqueue(`: keep-alive\n\n`);
         } catch (error) {
           console.error(`Error polling Redis for ${dataType}:`, error);
-          controller.enqueue(
-            `data: ${JSON.stringify({
-              type: "error",
-              message: "Error fetching updates",
-            })}\n\n`
-          );
+
+          if (!isClosed) {
+            try {
+              safeEnqueue(
+                `data: ${JSON.stringify({
+                  type: "error",
+                  message: "Error fetching updates",
+                })}\n\n`
+              );
+            } catch (enqueueError) {
+              console.error("Failed to send error message:", enqueueError);
+            }
+          }
         }
       }, 3000);
 
@@ -112,7 +159,13 @@ export async function GET(request: NextRequest) {
       request.signal.addEventListener("abort", () => {
         console.log(`SSE connection closed for ${dataType}`);
         clearInterval(interval);
-        controller.close();
+        isClosed = true;
+
+        try {
+          controller.close();
+        } catch (error) {
+          // Ignore close errors
+        }
       });
     },
   });

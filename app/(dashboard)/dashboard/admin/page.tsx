@@ -1,12 +1,20 @@
-"use client"
+"use client";
 
-import { useDemo, ROLES, ROLE_NAMES } from "@/lib/demo-context"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { useDemoAuth } from "@/lib/demo-auth";
+import { ROLES, getRoleName } from "@/lib/roles";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function AdminPage() {
-  const { isAdmin } = useDemo()
+  const { session } = useDemoAuth();
+  const isAdmin = session?.user?.role === ROLES.ADMIN;
 
   if (!isAdmin) {
     return (
@@ -14,17 +22,20 @@ export default function AdminPage() {
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Access Denied</AlertTitle>
         <AlertDescription>
-          You need administrator privileges to access this page. Please switch to the Admin role.
+          You need administrator privileges to access this page. Please switch
+          to the Admin role.
         </AlertDescription>
       </Alert>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Administrative controls and settings</p>
+        <p className="text-muted-foreground">
+          Administrative controls and settings
+        </p>
       </div>
 
       <Card>
@@ -47,7 +58,7 @@ export default function AdminPage() {
                   <tr key={index} className="border-b">
                     <td className="p-2">Demo User {index + 1}</td>
                     <td className="p-2">user{index + 1}@example.com</td>
-                    <td className="p-2">{ROLE_NAMES[role]}</td>
+                    <td className="p-2">{getRoleName(role)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -56,5 +67,5 @@ export default function AdminPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

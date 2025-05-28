@@ -1,52 +1,102 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Legend } from "recharts"
-import { useRealTimeData } from "@/hooks/use-real-time-data"
-import type { TeamPerformanceData } from "@/lib/actions"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from "recharts";
+import { useRealTimeData } from "@/hooks/use-real-time-data";
+import type { TeamPerformanceData } from "@/lib/actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TeamPerformanceChartProps {
-  initialData: TeamPerformanceData
-  className?: string
+  initialData: TeamPerformanceData;
+  className?: string;
 }
 
-export function TeamPerformanceChart({ initialData, className }: TeamPerformanceChartProps) {
-  const { data, error, isConnected } = useRealTimeData<TeamPerformanceData>("team", initialData)
+export function TeamPerformanceChart({
+  initialData,
+  className,
+}: TeamPerformanceChartProps) {
+  const {
+    data: rawData,
+    error,
+    isConnected,
+  } = useRealTimeData<TeamPerformanceData>("team", initialData);
+
+  // Format data with rounded values
+  const data = rawData
+    ? rawData.map((item) => ({
+        ...item,
+        productivity: item.productivity
+          ? Math.round(item.productivity * 10) / 10
+          : item.productivity,
+        engagement: item.engagement
+          ? Math.round(item.engagement * 10) / 10
+          : item.engagement,
+        satisfaction: item.satisfaction
+          ? Math.round(item.satisfaction * 10) / 10
+          : item.satisfaction,
+      }))
+    : null;
 
   if (!data || data.length === 0) {
     return (
-      <Card className={className}>
+      <Card className={`${className} w-full`}>
         <CardHeader>
           <CardTitle>Team Performance</CardTitle>
-          <CardDescription>Productivity, engagement, and satisfaction metrics over time</CardDescription>
+          <CardDescription>
+            Productivity, engagement, and satisfaction metrics over time
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] sm:h-[350px] md:h-[400px] flex items-center justify-center">
+          <div className="h-[300px] sm:h-[350px] md:h-[400px] flex items-center justify-center w-full">
             <Skeleton className="h-full w-full" />
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
-    <Card className={className}>
+    <Card className={`${className} w-full`}>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
           <div>
             <CardTitle>Team Performance</CardTitle>
-            <CardDescription>Productivity, engagement, and satisfaction metrics over time</CardDescription>
+            <CardDescription>
+              Productivity, engagement, and satisfaction metrics over time
+            </CardDescription>
           </div>
-          {isConnected && <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Live data" />}
+          {isConnected && (
+            <div
+              className="h-2 w-2 rounded-full bg-green-500 animate-pulse"
+              title="Live data"
+            />
+          )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-hidden w-full">
         {error && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive" className="mb-4 w-full">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
@@ -66,13 +116,16 @@ export function TeamPerformanceChart({ initialData, className }: TeamPerformance
               color: "hsl(var(--chart-3))",
             },
           }}
-          className="h-[300px] sm:h-[350px] md:h-[400px]"
+          className="h-[300px] sm:h-[350px] md:h-[400px] min-w-0 w-full"
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="99%" height="100%">
+            <LineChart
+              data={data}
+              margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-              <XAxis dataKey="date" />
-              <YAxis />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} width={30} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Legend />
               <Line
@@ -101,5 +154,5 @@ export function TeamPerformanceChart({ initialData, className }: TeamPerformance
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

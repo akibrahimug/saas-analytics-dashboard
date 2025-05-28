@@ -1,31 +1,47 @@
-"use client"
+"use client";
 
-import { useDemo, ROLES } from "@/lib/demo-context"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useDemoAuth } from "@/lib/demo-auth";
+import { ROLES, hasPermission, PERMISSIONS } from "@/lib/roles";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SettingsPage() {
-  const { canAccess } = useDemo()
+  const { session } = useDemoAuth();
+  const canAccess = session?.user?.role
+    ? hasPermission(
+        session.user.role,
+        "VIEW_SETTINGS" as keyof typeof PERMISSIONS
+      )
+    : false;
 
-  if (!canAccess(ROLES.MEMBER)) {
+  if (!canAccess) {
     return (
       <Alert variant="destructive" className="mt-4">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Access Denied</AlertTitle>
         <AlertDescription>
-          You need at least Member privileges to access settings. Please switch to a higher role.
+          You need at least Member privileges to access settings. Please switch
+          to a higher role.
         </AlertDescription>
       </Alert>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and preferences</p>
+        <p className="text-muted-foreground">
+          Manage your account and preferences
+        </p>
       </div>
 
       <Tabs defaultValue="profile">
@@ -44,14 +60,18 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">Name</label>
-                  <input type="text" className="mt-1 block w-full rounded-md border p-2" defaultValue="Demo User" />
+                  <input
+                    type="text"
+                    className="mt-1 block w-full rounded-md border p-2"
+                    defaultValue={session?.user?.name || "Demo User"}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Email</label>
                   <input
                     type="email"
                     className="mt-1 block w-full rounded-md border p-2"
-                    defaultValue="demo@example.com"
+                    defaultValue={session?.user?.email || "demo@example.com"}
                   />
                 </div>
               </div>
@@ -62,7 +82,9 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>Manage your notification preferences</CardDescription>
+              <CardDescription>
+                Manage your notification preferences
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -88,7 +110,11 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">Team Name</label>
-                  <input type="text" className="mt-1 block w-full rounded-md border p-2" defaultValue="Demo Team" />
+                  <input
+                    type="text"
+                    className="mt-1 block w-full rounded-md border p-2"
+                    defaultValue="Demo Team"
+                  />
                 </div>
               </div>
             </CardContent>
@@ -96,5 +122,5 @@ export default function SettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

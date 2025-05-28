@@ -1,56 +1,80 @@
-"use client"
+"use client";
 
-import { formatDistanceToNow } from "date-fns"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useRealTimeData } from "@/hooks/use-real-time-data"
-import type { Announcement } from "@/lib/actions"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { formatDistanceToNow } from "date-fns";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRealTimeData } from "@/hooks/use-real-time-data";
+import type { Announcement } from "@/lib/actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface AnnouncementsFeedProps {
-  initialAnnouncements: Announcement[]
+  initialAnnouncements: Announcement[];
 }
 
-export function AnnouncementsFeed({ initialAnnouncements }: AnnouncementsFeedProps) {
+export function AnnouncementsFeed({
+  initialAnnouncements,
+}: AnnouncementsFeedProps) {
   const {
     data: announcements,
     error,
     isConnected,
-  } = useRealTimeData<Announcement[]>("announcements", initialAnnouncements)
+  } = useRealTimeData<Announcement[]>("announcements", initialAnnouncements);
 
   return (
-    <Card className="h-full">
+    <Card className="h-full w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
           <div>
             <CardTitle>Announcements</CardTitle>
-            <CardDescription>Latest team updates and announcements</CardDescription>
+            <CardDescription>
+              Latest team updates and announcements
+            </CardDescription>
           </div>
-          {isConnected && <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Live data" />}
+          {isConnected && (
+            <div
+              className="h-2 w-2 rounded-full bg-green-500 animate-pulse"
+              title="Live data"
+            />
+          )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="w-full">
         {error && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive" className="mb-4 w-full">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <ScrollArea className="h-[250px] sm:h-[300px] md:h-[350px] pr-4">
-          <div className="space-y-4">
+        <ScrollArea className="h-[250px] sm:h-[300px] md:h-[350px] pr-4 w-full">
+          <div className="space-y-4 w-full">
             {announcements.map((announcement) => (
-              <div key={announcement.id} className="flex gap-4">
+              <div key={announcement.id} className="flex gap-4 w-full">
                 <Avatar>
-                  <AvatarImage src={announcement.author.avatar || "/placeholder.svg"} alt={announcement.author.name} />
-                  <AvatarFallback>{announcement.author.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage
+                    src={announcement.author.avatar || "/placeholder.svg"}
+                    alt={announcement.author.name}
+                  />
+                  <AvatarFallback>
+                    {announcement.author.name.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
-                <div className="space-y-1">
+                <div className="space-y-1 flex-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-semibold">{announcement.author.name}</h4>
+                    <h4 className="font-semibold">
+                      {announcement.author.name}
+                    </h4>
                     <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(announcement.date), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(announcement.date), {
+                        addSuffix: true,
+                      })}
                     </span>
                   </div>
                   <p className="text-sm">{announcement.content}</p>
@@ -71,5 +95,5 @@ export function AnnouncementsFeed({ initialAnnouncements }: AnnouncementsFeedPro
         </ScrollArea>
       </CardContent>
     </Card>
-  )
+  );
 }
