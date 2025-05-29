@@ -1,23 +1,34 @@
-"use client"
+"use client";
 
-import { useDemo, ROLES } from "@/lib/demo-context"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { useDemoAuth } from "@/lib/demo-auth";
+import { ROLES, hasPermission, PERMISSIONS } from "@/lib/roles";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function TeamPage() {
-  const { canAccess } = useDemo()
+  const { session } = useDemoAuth();
+  const canAccess = session?.user?.role
+    ? hasPermission(session.user.role, "VIEW_TEAM" as keyof typeof PERMISSIONS)
+    : false;
 
-  if (!canAccess(ROLES.VIEWER)) {
+  if (!canAccess) {
     return (
       <Alert variant="destructive" className="mt-4">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Access Denied</AlertTitle>
         <AlertDescription>
-          You need at least Viewer privileges to access team information. Please switch to a higher role.
+          You need at least Viewer privileges to access team information. Please
+          switch to a higher role.
         </AlertDescription>
       </Alert>
-    )
+    );
   }
 
   return (
@@ -64,5 +75,5 @@ export default function TeamPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

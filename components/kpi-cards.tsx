@@ -1,14 +1,21 @@
-"use client"
+"use client";
 
-import { Activity, CheckCircle2, Clock, MessageSquare, TrendingUp, TrendingDown } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useRealTimeData } from "@/hooks/use-real-time-data"
-import type { KpiMetric } from "@/lib/actions"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import {
+  Activity,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRealTimeData } from "@/hooks/use-real-time-data";
+import type { KpiMetric } from "@/lib/actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface KpiCardsProps {
-  initialData: KpiMetric
+  initialData: KpiMetric;
 }
 
 // Default KPI data to use as fallback
@@ -17,16 +24,19 @@ const defaultKpiData: KpiMetric = {
   avgResponseTime: { value: 0, change: 0 },
   teamActivity: { value: 0, change: 0 },
   communicationFreq: { value: 0, change: 0 },
-}
+};
 
 export function KpiCards({ initialData }: KpiCardsProps) {
   // Ensure initialData is not null or undefined
-  const safeInitialData = initialData || defaultKpiData
+  const safeInitialData = initialData || defaultKpiData;
 
-  const { data, error, isConnected } = useRealTimeData<KpiMetric>("kpi", safeInitialData)
+  const { data, error, isConnected } = useRealTimeData<KpiMetric>(
+    "kpi",
+    safeInitialData
+  );
 
   // Ensure data is not null or undefined
-  const safeData = data || safeInitialData
+  const safeData = data || safeInitialData;
 
   if (error) {
     return (
@@ -34,18 +44,22 @@ export function KpiCards({ initialData }: KpiCardsProps) {
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>Error loading KPI data: {error}</AlertDescription>
       </Alert>
-    )
+    );
   }
 
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-      <Card>
+    <div className="grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 w-full">
+      <Card className="overflow-hidden w-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Task Completion Rate</CardTitle>
+          <CardTitle className="text-xs sm:text-sm font-medium">
+            Task Completion Rate
+          </CardTitle>
           <CheckCircle2 className="h-4 w-4 text-teal-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{safeData.taskCompletionRate.value}%</div>
+          <div className="text-xl sm:text-2xl font-bold">
+            {Math.round(safeData.taskCompletionRate.value)}%
+          </div>
           <p className="text-xs text-muted-foreground">
             {safeData.taskCompletionRate.change > 0 ? (
               <TrendingUp className="mr-1 inline h-3 w-3 text-teal-500" />
@@ -53,19 +67,29 @@ export function KpiCards({ initialData }: KpiCardsProps) {
               <TrendingDown className="mr-1 inline h-3 w-3 text-red-500" />
             )}
             {safeData.taskCompletionRate.change > 0 ? "+" : ""}
-            {safeData.taskCompletionRate.change}% from last month
+            {Math.round(safeData.taskCompletionRate.change * 10) / 10}% from
+            last month
           </p>
-          {isConnected && <div className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse" title="Live data" />}
+          {isConnected && (
+            <div
+              className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse"
+              title="Live data"
+            />
+          )}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden w-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Average Response Time</CardTitle>
+          <CardTitle className="text-xs sm:text-sm font-medium">
+            Average Response Time
+          </CardTitle>
           <Clock className="h-4 w-4 text-blue-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{safeData.avgResponseTime.value}h</div>
+          <div className="text-xl sm:text-2xl font-bold">
+            {Math.round(safeData.avgResponseTime.value * 10) / 10}h
+          </div>
           <p className="text-xs text-muted-foreground">
             {safeData.avgResponseTime.change < 0 ? (
               <TrendingUp className="mr-1 inline h-3 w-3 text-teal-500" />
@@ -73,19 +97,29 @@ export function KpiCards({ initialData }: KpiCardsProps) {
               <TrendingDown className="mr-1 inline h-3 w-3 text-red-500" />
             )}
             {safeData.avgResponseTime.change > 0 ? "+" : ""}
-            {safeData.avgResponseTime.change} hours from last week
+            {Math.round(safeData.avgResponseTime.change * 10) / 10} hours from
+            last week
           </p>
-          {isConnected && <div className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse" title="Live data" />}
+          {isConnected && (
+            <div
+              className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse"
+              title="Live data"
+            />
+          )}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden w-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Team Activity</CardTitle>
+          <CardTitle className="text-xs sm:text-sm font-medium">
+            Team Activity
+          </CardTitle>
           <Activity className="h-4 w-4 text-violet-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{safeData.teamActivity.value}%</div>
+          <div className="text-xl sm:text-2xl font-bold">
+            {Math.round(safeData.teamActivity.value)}%
+          </div>
           <p className="text-xs text-muted-foreground">
             {safeData.teamActivity.change > 0 ? (
               <TrendingUp className="mr-1 inline h-3 w-3 text-teal-500" />
@@ -93,19 +127,29 @@ export function KpiCards({ initialData }: KpiCardsProps) {
               <TrendingDown className="mr-1 inline h-3 w-3 text-red-500" />
             )}
             {safeData.teamActivity.change > 0 ? "+" : ""}
-            {safeData.teamActivity.change}% from last month
+            {Math.round(safeData.teamActivity.change * 10) / 10}% from last
+            month
           </p>
-          {isConnected && <div className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse" title="Live data" />}
+          {isConnected && (
+            <div
+              className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse"
+              title="Live data"
+            />
+          )}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden w-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Communication Frequency</CardTitle>
+          <CardTitle className="text-xs sm:text-sm font-medium">
+            Communication Frequency
+          </CardTitle>
           <MessageSquare className="h-4 w-4 text-orange-500" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{safeData.communicationFreq.value}/day</div>
+          <div className="text-xl sm:text-2xl font-bold">
+            {Math.round(safeData.communicationFreq.value * 10) / 10}/day
+          </div>
           <p className="text-xs text-muted-foreground">
             {safeData.communicationFreq.change > 0 ? (
               <TrendingUp className="mr-1 inline h-3 w-3 text-teal-500" />
@@ -113,11 +157,17 @@ export function KpiCards({ initialData }: KpiCardsProps) {
               <TrendingDown className="mr-1 inline h-3 w-3 text-red-500" />
             )}
             {safeData.communicationFreq.change > 0 ? "+" : ""}
-            {safeData.communicationFreq.change}% from last week
+            {Math.round(safeData.communicationFreq.change * 10) / 10}% from last
+            week
           </p>
-          {isConnected && <div className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse" title="Live data" />}
+          {isConnected && (
+            <div
+              className="mt-2 h-1 w-1 rounded-full bg-green-500 animate-pulse"
+              title="Live data"
+            />
+          )}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
